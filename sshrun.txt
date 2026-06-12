@@ -1,0 +1,326 @@
+================================================================================
+  COMPLETE GUIDE — UPLOAD TO aryan@172.16.15.240 AND RUN THE TOURNAMENT
+================================================================================
+
+Follow every step in order. Do not skip any step.
+All commands marked with $ are run on YOUR MAC.
+All commands marked with [SERVER] are run on the remote server after SSH.
+
+────────────────────────────────────────────────────────────────────────────────
+PART 1 — CONNECT TO THE SERVER (TEST THE CONNECTION FIRST)
+────────────────────────────────────────────────────────────────────────────────
+
+Open a new terminal on your Mac and run:
+
+  $ ssh aryan@172.16.15.240
+
+If it asks "Are you sure you want to continue connecting?" → type yes and press Enter.
+Enter the password when prompted.
+
+You are now on the server. You should see a Linux prompt like:
+  aryan@hostname:~$
+
+Type exit to disconnect:
+  [SERVER] exit
+
+────────────────────────────────────────────────────────────────────────────────
+PART 2 — UPLOAD THE PROJECT FROM YOUR MAC TO THE SERVER
+────────────────────────────────────────────────────────────────────────────────
+
+Do this from your Mac (NOT while SSH'd in — open a separate terminal tab).
+
+  $ rsync -avz --progress \
+      --exclude '.venv*' \
+      --exclude '__pycache__' \
+      --exclude '*.pyc' \
+      --exclude '.pytest_cache' \
+      --exclude 'checkpoints/' \
+      --exclude 'results/' \
+      --exclude '.DS_Store' \
+      --exclude '.hypothesis' \
+      /Users/appypie/Downloads/InstructBLIP/ \
+      aryan@172.16.15.240:~/InstructBLIP/
+
+What this does:
+  - Uploads the entire project to ~/InstructBLIP/ on the server
+  - Skips virtual environments, caches, and large temp files
+  - The trailing / on the source path is important — don't remove it
+
+Expected output: a list of files being transferred, ending with:
+  sent XXXMB  bytes  received XXX bytes  ...
+  total size is ...
+
+If you need to re-upload after making changes, run the exact same rsync command —
+it will only transfer files that changed (fast).
+
+────────────────────────────────────────────────────────────────────────────────
+PART 3 — SSH INTO THE SERVER AND VERIFY THE UPLOAD
+────────────────────────────────────────────────────────────────────────────────
+
+  $ ssh aryan@172.16.15.240
+
+Once logged in:
+
+  [SERVER] ls ~/InstructBLIP/
+
+You should see:
+  config.yaml  data/  main.py  requirements-cuda.txt  setup_cuda.sh  src/  tests/  ...
+
+If the folder is empty or missing, go back to Part 2 and re-run the rsync command.
+
+────────────────────────────────────────────────────────────────────────────────
+PART 4 — SET UP THE PYTHON ENVIRONMENT (DO THIS ONCE)
+────────────────────────────────────────────────────────────────────────────────
+
+  [SERVER] cd ~/InstructBLIP
+  [SERVER] bash setup_cuda.sh
+
+This will:
+  1. Detect Python (uses python3.12 if available, else python3.10+)
+  2. Create a virtual environment at .venv_cuda/
+  3. Install PyTorch with CUDA 12.8 support (the correct GPU build — not the CPU one)
+  4. Install all other dependencies including ImageReward
+  5. Run 265 unit tests to confirm everything installed correctly
+  6. Run verify_imagereward.py to confirm ImageReward loads
+
+This takes 5-15 minutes (downloading ~3 GB of packages).
+
+Expected ending output:
+  265 passed in XX.XXs
+  ...
+  PASS: ImageReward installed, loaded (native), and scoring correctly.
+  ============================================================
+   Setup complete. Activate the env and run the tournament:
+  ============================================================
+
+If setup_cuda.sh fails at any step, read the error message carefully.
+Common fixes are in README.md Section 12 (Troubleshooting).
+
+────────────────────────────────────────────────────────────────────────────────
+PART 5 — VERIFY THE GPU IS VISIBLE
+────────────────────────────────────────────────────────────────────────────────
+
+  [SERVER] source ~/InstructBLIP/.venv_cuda/bin/activate
+  [SERVER] python -c "import torch; print(torch.cuda.device_count(), 'GPU(s)'); print(torch.cuda.get_device_name(0))"
+
+Expected output:
+  2 GPU(s)
+  NVIDIA RTX A6000
+
+If it says 0 GPU(s) or "CUDA not available":
+  - Run: nvidia-smi    (check the driver is loaded)
+  - Run: nvcc --version    (check CUDA toolkit is installed)
+  - Re-run: bash setup_cuda.sh    (it may have installed CPU torch by mistake)
+
+────────────────────────────────────────────────────────────────────────────────
+PART 6 — CREATE THE RESULTS FOLDER
+────────────────────────────────────────────────────────────────────────────────
+
+  [SERVER] cd ~/InstructBLIP
+  [SERVER] mkdir -p results
+
+────────────────────────────────────────────────────────────────────────────────
+PART 7 — RUN THE TOURNAMENT IN THE BACKGROUND
+────────────────────────────────────────────────────────────────────────────────
+
+Use nohup so the run continues even if your SSH connection drops or your
+Mac goes to sleep.
+
+  [SERVER] cd ~/InstructBLIP
+  [SERVER] source .venv_cuda/bin/activate
+  [SERVER] nohup python main.py tournament \
+    --data        "data/Metric Evaluation Text to Image.xlsx" \
+    --config      config.yaml \
+    --sheet-range "Mermaid Metric:Underwatercity Metric" \
+    --cell-range  "E2:E11" \
+    --export-csv  results/evaluation_scores.csv \
+    --output      results/ \
+    > results/tournament.log 2>&1 &
+
+The last line returns immediately with output like:
+  [1] 12345
+
+That number (12345) is the Process ID (PID). Write it down.
+
+The tournament is now running in the background.
+You can safely close your terminal — it will keep going.
+
+────────────────────────────────────────────────────────────────────────────────
+PART 8 — MONITOR PROGRESS (FROM ANY SSH SESSION)
+────────────────────────────────────────────────────────────────────────────────
+
+Reconnect to the server anytime:
+  $ ssh aryan@172.16.15.240
+  [SERVER] cd ~/InstructBLIP
+
+Watch the live log:
+  [SERVER] tail -f results/tournament.log
+
+You will see lines like:
+  ✅ Active scorers (5/5): hpsv2, image_reward, pickscore, vlm_judge, vqa
+  🏁 Starting tournament: 50 images, 1225 pairwise matches
+  ...
+  2026-xx-xx xx:xx:xx - src.arena - INFO - Tournament progress: 10/1225 matches (0.8%)
+  2026-xx-xx xx:xx:xx - src.arena - INFO - Tournament progress: 20/1225 matches (1.6%)
+  ...
+
+Press Ctrl+C to stop watching the log. This does NOT stop the tournament.
+
+Check if it is still running:
+  [SERVER] ps aux | grep main.py
+
+Check GPU usage:
+  [SERVER] nvidia-smi
+
+Watch GPU usage live (updates every 2 seconds):
+  [SERVER] watch -n 2 nvidia-smi
+
+────────────────────────────────────────────────────────────────────────────────
+PART 9 — WHEN THE TOURNAMENT FINISHES
+────────────────────────────────────────────────────────────────────────────────
+
+You will see near the end of the log:
+  🏆 Tournament completed! 1225 matches, 50 ranked images.
+  ✅ Results saved to: .../results/tournament_results.json
+  ✅ Metrics saved to: .../results/evaluation_scores.csv
+
+Verify the files exist:
+  [SERVER] ls -lh results/
+
+Expected files:
+  evaluation_scores.csv      ← the ranked table you want
+  tournament_results.json    ← full data for charts
+
+────────────────────────────────────────────────────────────────────────────────
+PART 10 — GENERATE CHARTS ON THE SERVER
+────────────────────────────────────────────────────────────────────────────────
+
+  [SERVER] source ~/InstructBLIP/.venv_cuda/bin/activate
+  [SERVER] cd ~/InstructBLIP
+  [SERVER] python main.py visualize \
+    --results results/tournament_results.json \
+    --output  results/viz/
+
+Charts are saved to results/viz/:
+  heatmap.png
+  rankings.png
+  progression.png
+  distribution.png
+
+────────────────────────────────────────────────────────────────────────────────
+PART 11 — DOWNLOAD RESULTS BACK TO YOUR MAC
+────────────────────────────────────────────────────────────────────────────────
+
+Run this on YOUR MAC (not SSH'd in):
+
+  $ rsync -avz \
+      aryan@172.16.15.240:~/InstructBLIP/results/ \
+      /Users/appypie/Downloads/InstructBLIP/results/
+
+This downloads everything in results/ to your local machine.
+
+Open the CSV on Mac:
+  $ open /Users/appypie/Downloads/InstructBLIP/results/evaluation_scores.csv
+
+Open the charts:
+  $ open /Users/appypie/Downloads/InstructBLIP/results/viz/rankings.png
+
+────────────────────────────────────────────────────────────────────────────────
+PART 12 — IF SOMETHING GOES WRONG
+────────────────────────────────────────────────────────────────────────────────
+
+  PROBLEM: Tournament died mid-way
+  FIX:     Resume from last checkpoint (saved every 100 matches):
+
+    [SERVER] ls ~/InstructBLIP/checkpoints/
+    [SERVER] source ~/InstructBLIP/.venv_cuda/bin/activate
+    [SERVER] cd ~/InstructBLIP
+    [SERVER] nohup python main.py tournament \
+      --data        "data/Metric Evaluation Text to Image.xlsx" \
+      --config      config.yaml \
+      --sheet-range "Mermaid Metric:Underwatercity Metric" \
+      --cell-range  "E2:E11" \
+      --export-csv  results/evaluation_scores.csv \
+      --output      results/ \
+      --checkpoint  checkpoints/checkpoint_100.json \
+      > results/tournament.log 2>&1 &
+    
+    Replace checkpoint_100.json with the most recent file you see in checkpoints/.
+
+  PROBLEM: "CUDA not available"
+  FIX:     Run nvidia-smi to check driver. Then re-run bash setup_cuda.sh
+
+  PROBLEM: "No module named X"
+  FIX:     Make sure you activated the venv: source .venv_cuda/bin/activate
+
+  PROBLEM: HPSv2 fails with "You have to specify input_ids"
+  FIX:     Your src/scoring/hpsv2.py is outdated. Re-upload with rsync.
+
+  PROBLEM: ImageReward fails (torch.xpu error)
+  FIX:     pip install "diffusers>=0.29,<0.30"
+
+  PROBLEM: Process is gone but log says "running"
+  FIX:     ps aux | grep main.py — if nothing shown, it finished or crashed.
+           Check the bottom of the log: tail -100 results/tournament.log
+
+────────────────────────────────────────────────────────────────────────────────
+PART 13 — QUICK COMMAND CHEATSHEET (COPY-PASTE READY)
+────────────────────────────────────────────────────────────────────────────────
+
+FROM YOUR MAC (run in a local terminal):
+
+  # Upload project to server
+  rsync -avz --progress \
+    --exclude '.venv*' --exclude '__pycache__' --exclude '*.pyc' \
+    --exclude '.pytest_cache' --exclude 'checkpoints/' --exclude 'results/' \
+    --exclude '.DS_Store' --exclude '.hypothesis' \
+    /Users/appypie/Downloads/InstructBLIP/ \
+    aryan@172.16.15.240:~/InstructBLIP/
+
+  # SSH into server
+  ssh aryan@172.16.15.240
+
+  # Download results from server
+  rsync -avz \
+    aryan@172.16.15.240:~/InstructBLIP/results/ \
+    /Users/appypie/Downloads/InstructBLIP/results/
+
+ON THE SERVER (after SSH):
+
+  # First-time setup (run once)
+  cd ~/InstructBLIP && bash setup_cuda.sh
+
+  # Activate environment (run every session)
+  source ~/InstructBLIP/.venv_cuda/bin/activate
+  cd ~/InstructBLIP
+
+  # Verify GPU
+  python -c "import torch; print(torch.cuda.device_count(), 'GPU(s)')"
+
+  # Run tournament in background
+  mkdir -p results
+  nohup python main.py tournament \
+    --data        "data/Metric Evaluation Text to Image.xlsx" \
+    --config      config.yaml \
+    --sheet-range "Mermaid Metric:Underwatercity Metric" \
+    --cell-range  "E2:E11" \
+    --export-csv  results/evaluation_scores.csv \
+    --output      results/ \
+    > results/tournament.log 2>&1 &
+  echo "PID: $!"
+
+  # Monitor
+  tail -f results/tournament.log
+  watch -n 2 nvidia-smi
+
+  # Generate charts (after tournament finishes)
+  python main.py visualize \
+    --results results/tournament_results.json \
+    --output  results/viz/
+
+  # Run tests
+  python -m pytest tests/ -q
+
+================================================================================
+  END OF sshrun.txt
+================================================================================

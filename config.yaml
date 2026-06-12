@@ -1,0 +1,93 @@
+# IMAGE-LLP-VISION Configuration
+
+# Vision-Language Models
+# Quantization options: 4bit (lowest memory), 8bit, fp16, fp32 (highest precision)
+models:
+  instructblip:
+    hf_id: "Salesforce/instructblip-flan-t5-xl"  # ~3GB fp16 / ~2GB 4bit
+    # fp16  → works on Mac MPS/CPU (~10 GB RAM)
+    # 4bit  → recommended on CUDA (saves ~6 GB VRAM, quality nearly identical)
+    quantization: "4bit"  # Options: 4bit, 8bit, fp16, fp32
+  
+  blip2:
+    hf_id: "Salesforce/blip2-opt-2.7b"
+    quantization: "fp16"  # Options: 4bit, 8bit, fp16, fp32
+  
+  blip:
+    hf_id: "Salesforce/blip-image-captioning-large"
+    quantization: "8bit"  # Options: 4bit, 8bit, fp16, fp32
+  
+  clip:
+    hf_id: "openai/clip-vit-large-patch14"
+    quantization: "fp16"  # Options: 4bit, 8bit, fp16, fp32
+  
+  # Scoring model configurations
+  pickscore:
+    hf_id: "yuvalkirstain/PickScore_v1"
+    quantization: "fp16"  # Options: 4bit, 8bit, fp16, fp32
+  
+  hpsv2:
+    hf_id: "adams-story/HPSv2-hf"
+    quantization: "fp16"  # Options: 4bit, 8bit, fp16, fp32
+  
+  image_reward:
+    hf_id: "THUDM/ImageReward"
+    quantization: "fp16"  # Options: 4bit, 8bit, fp16, fp32
+
+# Scoring Configuration
+scoring:
+  # Scorer weights must sum to 1.0
+  # NOTE: a weight key must exist for EVERY scorer the tournament loads,
+  # otherwise that scorer is run but silently dropped from the ensemble.
+  weights:
+    vqa: 0.15               # VQAScore using InstructBLIP
+    vlm_judge: 0.15         # VLMJudge using InstructBLIP
+    pickscore: 0.17         # PickScore aesthetic scoring
+    hpsv2: 0.20             # HPSv2 human preference score
+    image_reward: 0.13      # ImageReward human preference
+    clip_alignment: 0.20    # CLIPScore prompt-image alignment (only prompt fidelity signal)
+  
+  # Bradley-Terry MLE configuration
+  bt_mle:
+    beta: 1e-10  # Regularization for images with 0 wins
+  
+  # Scorer timeout in seconds (default: 30)
+  scorer_timeout: 30
+  
+  # Exclude scorer if timeout rate exceeds this threshold
+  timeout_exclusion_threshold: 0.1  # 10%
+
+# Training/Tournament Configuration
+training:
+  checkpoint_every: 100  # Save checkpoint every N matches
+  batch_size: 8          # Images per batch
+  learning_rate: 1e-4    # Not used in tournament mode
+
+# Elo Rating System Configuration
+elo:
+  k_factor: 32           # Elo K-factor for rating updates
+  initial_rating: 1500.0 # Starting Elo rating for all images
+
+# Device Configuration
+device:
+  auto_detect: true  # Auto-detect: CUDA → MPS → CPU
+  fallback: "cpu"    # Fallback device if auto-detection fails
+  max_memory_gb: 48  # Per-GPU VRAM limit (RTX A6000 = 49 GB; leave 1 GB headroom)
+
+# Checkpoint Configuration
+checkpoint:
+  directory: "./checkpoints"
+  max_directory_size_gb: 10  # Auto-prune old checkpoints when exceeded
+  preserve_corrupted: true    # Save corrupted checkpoints with .corrupted suffix
+
+# Cache Configuration
+cache:
+  directory: "./cache"
+  max_cache_size_gb: 5  # Warn when cache exceeds this size
+  enabled: true          # Enable embedding cache
+
+# Visualization Configuration
+visualization:
+  formats: ["png", "svg"]  # Output formats
+  dpi: 300                 # Resolution for PNG outputs
+  figsize: [12, 8]         # Default figure size (width, height)

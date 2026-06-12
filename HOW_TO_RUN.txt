@@ -1,0 +1,201 @@
+================================================================================
+  IMAGE-LLP-VISION — HOW THE SYSTEM RUNS (STEP BY STEP)
+================================================================================
+
+This file explains exactly what happens when you run the tournament,
+in plain English, so you know what to expect at every stage.
+
+────────────────────────────────────────────────────────────────────────────────
+WHAT THE SYSTEM DOES (THE BIG PICTURE)
+────────────────────────────────────────────────────────────────────────────────
+
+1.  Reads your images from an XLSX or CSV file.
+2.  Loads 4 or 5 AI scoring models into memory.
+3.  Runs every image against every other image (round-robin tournament).
+    For 50 images → 1,225 pairwise matches.
+4.  For each match, all loaded scorers vote on which image is better.
+    Their votes are combined into one "ensemble score".
+5.  The winner gains Elo points. The loser loses them.
+6.  After all matches, Bradley-Terry MLE calculates final rankings.
+7.  Results are saved as a CSV (per-image table) and a JSON (full data).
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 0 — PREREQUISITES (DO THIS ONCE)
+────────────────────────────────────────────────────────────────────────────────
+
+Make sure you have:
+  - Python 3.10 or newer
+  - The virtual environment set up (see README.md Section 2 or 3)
+  - Your venv activated (you'll see it in your terminal prompt)
+
+Mac:
+  source .venv312/bin/activate
+
+Linux/CUDA server:
+  source .venv_cuda/bin/activate
+
+You should see (.venv312) or (.venv_cuda) at the start of your prompt.
+Every command in this guide assumes the venv is active.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 1 — VERIFY THE ENVIRONMENT
+────────────────────────────────────────────────────────────────────────────────
+
+Run the test suite. This confirms all code is intact and dependencies work.
+
+  python -m pytest tests/ -q
+
+Expected output:
+  265 passed in XX.XXs
+
+If you see failures, stop here. Do not run the tournament until tests pass.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 2 — PREPARE YOUR OUTPUT FOLDER
+────────────────────────────────────────────────────────────────────────────────
+
+  mkdir -p results
+
+This is where the CSV, JSON, charts, and log file will be saved.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 3 — RUN THE TOURNAMENT
+────────────────────────────────────────────────────────────────────────────────
+
+This is the main command. Run it exactly as shown.
+
+  python main.py tournament \
+    --data        "data/Metric Evaluation Text to Image.xlsx" \
+    --config      config.yaml \
+    --sheet-range "Mermaid Metric:Underwatercity Metric" \
+    --cell-range  "E2:E11" \
+    --export-csv  results/evaluation_scores.csv \
+    --output      results/
+
+What each flag does:
+  --data          The Excel file with your images
+  --config        The config file (controls model settings and weights)
+  --sheet-range   Which sheets to read (first:last, inclusive)
+  --cell-range    Which cells hold the images on each sheet
+  --export-csv    Where to save the final per-image rankings table
+  --output        Where to save the full JSON results (used for charts later)
+
+────────────────────────────────────────────────────────────────────────────────
+WHAT YOU WILL SEE ON SCREEN (NORMAL OUTPUT)
+────────────────────────────────────────────────────────────────────────────────
+
+============================================================
+IMAGE-LLP-VISION Tournament Mode
+============================================================
+
+📊 Loading configuration from: config.yaml
+📁 Loading image metadata from: data/Metric Evaluation Text to Image.xlsx
+   Multi-sheet mode: Mermaid Metric:Underwatercity Metric, cells E2:E11
+✅ Loaded 50 images
+
+🔧 Loading evaluation models (this may take several minutes)...
+  ↳ Loading InstructBLIP (shared by VQAScore + VLMJudge)...
+     [this takes 1-2 minutes — downloading or loading from cache]
+  ↳ Loading PickScore ...
+  ↳ Loading HPSv2 ...
+  ↳ Loading ImageReward ...    ← if installed; otherwise shows ⚠️ warning
+✅ Active scorers (5/5): hpsv2, image_reward, pickscore, vlm_judge, vqa
+
+🏁 Starting tournament: 50 images, 1225 pairwise matches
+
+  [matches run one by one; a log line appears every 10 matches]
+
+🏆 Tournament completed! 1225 matches, 50 ranked images.
+
+💾 Saving full tournament results (JSON)...
+✅ Results saved to: results/tournament_results.json
+
+📤 Exporting per-image evaluation metrics...
+✅ Metrics saved to: results/evaluation_scores.csv
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 4 — CHECK YOUR RESULTS
+────────────────────────────────────────────────────────────────────────────────
+
+Two files are created:
+
+  results/evaluation_scores.csv
+    → Open in Excel or Numbers. Each row is one image.
+      Columns: rank, image_id, elo_rating, bt_rating, wins, losses,
+               win_rate, avg_ensemble_score, avg_pickscore, avg_hpsv2,
+               avg_image_reward, avg_vqascore, avg_vlm_judge
+      Rank 1 = the best image overall.
+
+  results/tournament_results.json
+    → Machine-readable full results. Used by the visualize command.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 5 — GENERATE CHARTS (OPTIONAL)
+────────────────────────────────────────────────────────────────────────────────
+
+  python main.py visualize \
+    --results results/tournament_results.json \
+    --output  results/viz/
+
+This creates 4 PNG charts in results/viz/:
+  heatmap.png      — which images beat which (grid)
+  rankings.png     — bar chart of final standings
+  progression.png  — how each image's Elo changed over time
+  distribution.png — spread of all ensemble scores
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 6 — IF THE RUN WAS INTERRUPTED (RESUME)
+────────────────────────────────────────────────────────────────────────────────
+
+The system saves a checkpoint every 100 matches automatically.
+To resume from where it stopped:
+
+  ls checkpoints/                   ← see available checkpoints
+  
+  python main.py tournament \
+    --data        "data/Metric Evaluation Text to Image.xlsx" \
+    --config      config.yaml \
+    --sheet-range "Mermaid Metric:Underwatercity Metric" \
+    --cell-range  "E2:E11" \
+    --export-csv  results/evaluation_scores.csv \
+    --output      results/ \
+    --checkpoint  checkpoints/checkpoint_100.json
+
+Replace checkpoint_100.json with the most recent file in checkpoints/.
+
+────────────────────────────────────────────────────────────────────────────────
+HOW LONG DOES IT TAKE?
+────────────────────────────────────────────────────────────────────────────────
+
+  Mac (Apple Silicon MPS, fp16):    ~20 hours for 1225 matches
+  Linux GPU (RTX A6000, 4-bit):     ~2-3 hours for 1225 matches
+
+  Each match = one pair of images scored by all loaded models.
+  Use nohup to run in the background so you can close the terminal.
+  See sshrun.txt for the background-run command.
+
+────────────────────────────────────────────────────────────────────────────────
+QUICK COMMAND REFERENCE
+────────────────────────────────────────────────────────────────────────────────
+
+  # See all commands
+  python main.py --help
+  python main.py tournament --help
+  python main.py visualize --help
+  python main.py benchmark --help
+
+  # Run tests
+  python -m pytest tests/ -q
+
+  # Check what's in results
+  ls -lh results/
+
+  # Watch a running tournament
+  tail -f results/tournament.log
+
+  # Check GPU usage (Linux)
+  nvidia-smi
+
+================================================================================
+  END OF HOW_TO_RUN.txt
+================================================================================
