@@ -1,0 +1,50 @@
+# IMAGE-LLP-VISION — CUDA (Linux) dependencies
+# Tested on: Python 3.10+, CUDA 12.4, NVIDIA RTX A6000
+#
+# Install with:
+#   pip install -r requirements-cuda.txt
+#
+# torch must be installed FIRST from the CUDA wheel index.
+# The plain `pip install torch` gives the CPU build — it will NOT use the GPU.
+
+# ── PyTorch (CUDA 12.4) ───────────────────────────────────────────────────
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch>=2.2.0,<3.0.0
+torchvision>=0.17.0
+
+# ── HuggingFace stack ─────────────────────────────────────────────────────
+transformers>=4.30.0,<5.0.0
+accelerate>=0.20.0
+# bitsandbytes enables 4-bit / 8-bit quantization on CUDA
+bitsandbytes>=0.43.0
+
+# ── Vision Models ─────────────────────────────────────────────────────────
+timm>=0.9.0
+open-clip-torch>=2.20.0
+
+# ── ImageReward (5th metric — optional, ~2 GB checkpoint download) ────────
+# Must pin diffusers to 0.29.x: latest diffusers requires torch>=2.4 (xpu).
+# setuptools<81 provides pkg_resources (removed in setuptools>=81).
+setuptools<81
+diffusers>=0.29.0,<0.30.0
+image-reward>=1.5
+clip-anytorch
+
+# ── Data / Visualization ──────────────────────────────────────────────────
+Pillow>=10.0.0
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0
+openpyxl>=3.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────
+PyYAML>=6.0
+tqdm>=4.65.0
+click>=8.1.0
+scipy>=1.10.0
+
+# ── Testing ───────────────────────────────────────────────────────────────
+pytest>=7.3.0
+hypothesis>=6.80.0
+pytest-cov>=4.1.0

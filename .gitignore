@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Caches and IDEs
+.pytest_cache/
+.hypothesis/
+.cursor/
+.kiro/
+.DS_Store
+.vscode/
+.idea/
+
+# Environments
+.venv/
+.venv312/
+.venv_cuda/
+venv/
+env/
+
+# Data, checkpoints and outputs
+cache/
+checkpoints/
+data/
+extracted_images/
+results/
+results_synthetic/
+*.zip
+
+# Ignore all markdown files
+*.md
+**/*.md
+
+# Allow only README.md
+!README.md
+!**/README.md

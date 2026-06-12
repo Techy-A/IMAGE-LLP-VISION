@@ -1,0 +1,37 @@
+# IMAGE-LLP-VISION Dependencies
+# Python 3.10+ required
+
+# Core ML Libraries
+torch>=2.0.0,<3.0.0
+transformers>=4.30.0
+bitsandbytes>=0.40.0
+accelerate>=0.20.0
+
+# Vision Models
+timm>=0.9.0
+open-clip-torch>=2.20.0
+ImageReward>=1.5
+
+# Data Processing
+Pillow>=10.0.0
+numpy>=1.24.0,<2.0.0
+pandas>=2.0.0
+openpyxl>=3.0.0  # For Excel file support
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+PyYAML>=6.0
+tqdm>=4.65.0
+click>=8.1.0
+
+# Testing (development only)
+pytest>=7.3.0
+hypothesis>=6.80.0
+pytest-cov>=4.1.0
+
+# Optional: Experiment Tracking
+# tensorboard>=2.13.0
+# wandb>=0.15.0
