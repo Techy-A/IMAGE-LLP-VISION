@@ -1,6 +1,6 @@
 import openpyxl
 
-wb = openpyxl.load_workbook('/Users/appypie/Downloads/InstructBLIP/data/Metric Evaluation Text to Image.xlsx')
+wb = openpyxl.load_workbook('data/Metric Evaluation Text to Image.xlsx')
 for sheet_name in wb.sheetnames:
     sheet = wb[sheet_name]
     print(f"Sheet: {sheet_name}")

@@ -85,7 +85,7 @@ Tested on macOS (Apple Silicon and Intel). Uses the `.venv312` environment.
 
 ```bash
 # 1. Go to the project folder
-cd /Users/appypie/Downloads/InstructBLIP
+cd ~/Downloads/IMAGE-LLP-VISION
 
 # 2. Create a Python 3.12 virtual environment (once)
 python3.12 -m venv .venv312
@@ -151,7 +151,7 @@ Choose one of these methods depending on your situation.
 ```bash
 # From your Mac, in the terminal:
 rsync -avz --exclude '.venv*' --exclude '__pycache__' --exclude '*.pyc' \
-  /Users/appypie/Downloads/InstructBLIP/ \
+  ~/Downloads/IMAGE-LLP-VISION/ \
   your_user@your.server.ip:~/InstructBLIP/
 ```
 
@@ -160,14 +160,14 @@ Re-run the same command at any time to sync only changed files.
 ### Option B — scp (simple, no exclusions)
 
 ```bash
-scp -r /Users/appypie/Downloads/InstructBLIP your_user@your.server.ip:~/
+scp -r ~/Downloads/IMAGE-LLP-VISION your_user@your.server.ip:~/
 ```
 
 ### Option C — Git (best for ongoing development)
 
 ```bash
 # On your Mac — push to GitHub/GitLab
-cd /Users/appypie/Downloads/InstructBLIP
+cd ~/Downloads/IMAGE-LLP-VISION
 git init
 git add .
 git commit -m "initial"

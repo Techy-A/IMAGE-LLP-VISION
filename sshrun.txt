@@ -38,7 +38,7 @@ Do this from your Mac (NOT while SSH'd in — open a separate terminal tab).
       --exclude 'results/' \
       --exclude '.DS_Store' \
       --exclude '.hypothesis' \
-      /Users/appypie/Downloads/InstructBLIP/ \
+      ~/Downloads/IMAGE-LLP-VISION/ \
       aryan@172.16.15.240:~/InstructBLIP/
 
 What this does:
@@ -215,15 +215,15 @@ Run this on YOUR MAC (not SSH'd in):
 
   $ rsync -avz \
       aryan@172.16.15.240:~/InstructBLIP/results/ \
-      /Users/appypie/Downloads/InstructBLIP/results/
+      ~/Downloads/IMAGE-LLP-VISION/results/
 
 This downloads everything in results/ to your local machine.
 
 Open the CSV on Mac:
-  $ open /Users/appypie/Downloads/InstructBLIP/results/evaluation_scores.csv
+  $ open ~/Downloads/IMAGE-LLP-VISION/results/evaluation_scores.csv
 
 Open the charts:
-  $ open /Users/appypie/Downloads/InstructBLIP/results/viz/rankings.png
+  $ open ~/Downloads/IMAGE-LLP-VISION/results/viz/rankings.png
 
 ────────────────────────────────────────────────────────────────────────────────
 PART 12 — IF SOMETHING GOES WRONG
@@ -274,7 +274,7 @@ FROM YOUR MAC (run in a local terminal):
     --exclude '.venv*' --exclude '__pycache__' --exclude '*.pyc' \
     --exclude '.pytest_cache' --exclude 'checkpoints/' --exclude 'results/' \
     --exclude '.DS_Store' --exclude '.hypothesis' \
-    /Users/appypie/Downloads/InstructBLIP/ \
+    ~/Downloads/IMAGE-LLP-VISION/ \
     aryan@172.16.15.240:~/InstructBLIP/
 
   # SSH into server
@@ -283,7 +283,7 @@ FROM YOUR MAC (run in a local terminal):
   # Download results from server
   rsync -avz \
     aryan@172.16.15.240:~/InstructBLIP/results/ \
-    /Users/appypie/Downloads/InstructBLIP/results/
+    ~/Downloads/IMAGE-LLP-VISION/results/
 
 ON THE SERVER (after SSH):
 
