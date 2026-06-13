@@ -1,7 +1,7 @@
 # IMAGE-LLP-VISION
 
 Pairwise image evaluation system using five vision-language models.
-Images are ranked via a prompt-group round-robin tournament — images are scored only against other images within the same prompt group (e.g. prompt sheet), Elo and Bradley-Terry MLE ratings are updated per group after each match, and final results are exported to combined and per-group CSVs, JSON, and charts.
+Images are ranked via a prompt-group round-robin tournament - images are scored only against other images within the same prompt group (e.g. prompt sheet), Elo and Bradley-Terry MLE ratings are updated per group after each match, and final results are exported to combined and per-group CSVs, JSON, and charts.
 
 **Scorers:** PickScore · HPSv2 · ImageReward · VQAScore · VLM-as-a-Judge  
 **Stack:** Python 3.10+, PyTorch 2.2+, HuggingFace Transformers 4.x, InstructBLIP  
@@ -12,8 +12,8 @@ Images are ranked via a prompt-group round-robin tournament — images are score
 ## Table of Contents
 
 1. [Project Structure](#1-project-structure)
-2. [Local Setup — Mac](#2-local-setup--mac)
-3. [Cloud Setup — Linux + CUDA (SSH)](#3-cloud-setup--linux--cuda-ssh)
+2. [Local Setup - Mac](#2-local-setup--mac)
+3. [Cloud Setup - Linux + CUDA (SSH)](#3-cloud-setup--linux--cuda-ssh)
 4. [Uploading the Project to a Cloud Server](#4-uploading-the-project-to-a-cloud-server)
 5. [Running the Tournament](#5-running-the-tournament)
 6. [All CLI Commands](#6-all-cli-commands)
@@ -79,7 +79,7 @@ InstructBLIP/
 
 ---
 
-## 2. Local Setup — Mac
+## 2. Local Setup - Mac
 
 Tested on macOS (Apple Silicon and Intel). Uses the `.venv312` environment.
 
@@ -112,7 +112,7 @@ source .venv312/bin/activate
 
 ---
 
-## 3. Cloud Setup — Linux + CUDA (SSH)
+## 3. Cloud Setup - Linux + CUDA (SSH)
 
 Tested on 2× NVIDIA RTX A6000 (49 GB VRAM each), CUDA 12.8, Python 3.12.
 
@@ -157,13 +157,13 @@ rsync -avz --exclude '.venv*' --exclude '__pycache__' --exclude '*.pyc' \
 
 Re-run the same command at any time to sync only changed files.
 
-### Option B — scp (simple, no exclusions)
+### Option B - scp (simple, no exclusions)
 
 ```bash
 scp -r ~/Downloads/IMAGE-LLP-VISION your_user@your.server.ip:~/
 ```
 
-### Option C — Git (best for ongoing development)
+### Option C - Git (best for ongoing development)
 
 ```bash
 # On your Mac — push to GitHub/GitLab
@@ -203,7 +203,7 @@ ssh -o ServerAliveInterval=60 your_user@your.server.ip
 
 All commands must be run from the project root with the venv active.
 
-### Quickstart — the real XLSX file
+### Quickstart - the real XLSX file
 
 ```bash
 mkdir -p results
@@ -232,7 +232,7 @@ python main.py tournament \
   --output     results/
 ```
 
-### Multi-sheet XLSX — how it works
+### Multi-sheet XLSX - how it works
 
 When images are embedded in spreadsheet cells (not stored as file paths),
 use `--sheet-range` and `--cell-range` together:
@@ -296,11 +296,11 @@ python main.py visualize \
   --types   heatmap
 
 # Available --types values:
-#   heatmap      — pairwise win/loss matrix
-#   rankings     — bar chart of final Elo / BT-MLE rankings
-#   progression  — Elo ratings changing match-by-match
-#   distribution — histogram of ensemble score distribution
-#   all          — all four (default)
+#   heatmap      --> pairwise win/loss matrix
+#   rankings     --> bar chart of final Elo / BT-MLE rankings
+#   progression  --> Elo ratings changing match-by-match
+#   distribution --> histogram of ensemble score distribution
+#   all          --> all four (default)
 ```
 
 ### Benchmark
